@@ -2,6 +2,3 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: pre-shift-check
-  labels:
-    app: pre-shift-check
-

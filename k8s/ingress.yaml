@@ -1,33 +1,29 @@
----
-# Ingress for path-based routing
-# Requires ingress-nginx controller
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pre-shift-check
   namespace: pre-shift-check
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 spec:
-  ingressClassName: nginx
+  ingressClassName: alb
   rules:
-    - http:
-        paths:
-          # API routes -> server
-          - path: /api(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pre-shift-check-server
-                port:
-                  number: 3000
-          # All other routes -> client
-          - path: /(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: pre-shift-check-client
-                port:
-                  number: 80
-
+  - host: pre-shift-check.dev.fieldintech.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: pre-shift-check
+            port:
+              number: 3000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pre-shift-check
+            port:
+              number: 80
