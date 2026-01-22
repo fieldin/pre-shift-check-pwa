@@ -110,11 +110,11 @@ echo "🔗 Services:"
 kubectl get svc -n ${NAMESPACE}
 
 echo ""
-echo "🌐 Public URL: http://pre-shift-check.dev.fieldintech.com"
+echo "🌐 Public URL: https://pre-shift-check.dev.fieldintech.com"
 echo ""
 
 # Health check
 echo "🩺 Health check:"
-curl -s --max-time 10 http://pre-shift-check.dev.fieldintech.com/api/status || echo "⚠️  Health check failed - ALB may still be registering targets"
+curl -s --max-time 10 https://pre-shift-check.dev.fieldintech.com/api/status || echo "⚠️  Health check failed - ALB may still be registering targets"
 echo ""
 
