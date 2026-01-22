@@ -17,3 +17,15 @@ echo "=== Waiting for rollout to complete ===" && \
 kubectl rollout status deployment/pre-shift-check -n pre-shift-check --timeout=120s && \
 echo "" && \
 echo "✅ Deployment updated successfully!"
+
+
+אם עןא:
+cd /home/michael/fieldin/pre-shift-check-pwa && \
+git add -A && \
+git commit -m "fix: Improve mobile touch interactions for offline form
+
+- Add touch-action: manipulation to buttons for better mobile response
+- Add debug logging to pre-shift-check component for troubleshooting
+- Remove tap highlight and user-select for cleaner mobile UX
+- Add :active states for visual feedback on touch" && \
+git push origin HEAD

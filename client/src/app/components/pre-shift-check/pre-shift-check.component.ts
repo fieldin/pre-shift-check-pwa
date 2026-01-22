@@ -162,42 +162,54 @@ export class PreShiftCheckComponent implements OnInit {
    * @param assetId - ID of the asset to check
    */
   async loadData(assetId: string): Promise<void> {
+    console.log('[PreShiftCheck] loadData called for asset:', assetId);
     try {
       // Verify check can be started
+      console.log('[PreShiftCheck] Checking if can start...');
       const check = await this.db.canStartCheck(assetId);
       if (!check.canStart) {
+        console.warn('[PreShiftCheck] Cannot start check:', check.error);
         this.errorMessage.set(check.error || 'Cannot start check');
         this.loading.set(false);
         return;
       }
 
       // Load asset
+      console.log('[PreShiftCheck] Loading asset...');
       const asset = await this.db.getAsset(assetId);
       if (!asset) {
+        console.warn('[PreShiftCheck] Asset not found');
         this.errorMessage.set('Asset not found');
         this.loading.set(false);
         return;
       }
       this.asset.set(asset);
+      console.log('[PreShiftCheck] Asset loaded:', asset.name);
 
       // Load checklist for this machine class
+      console.log('[PreShiftCheck] Loading checklist for:', asset.machine_class);
       const checklist = await this.db.getActiveChecklist(asset.machine_class);
       if (!checklist) {
+        console.warn('[PreShiftCheck] No checklist found for:', asset.machine_class);
         this.errorMessage.set(`No active checklist for ${asset.machine_class}`);
         this.loading.set(false);
         return;
       }
       this.checklist.set(checklist);
+      console.log('[PreShiftCheck] Checklist loaded:', checklist.items.length, 'items');
 
       // Initialize form items from checklist
       const items = this.initializeFormItems(checklist);
       this.formItems.set(items);
+      console.log('[PreShiftCheck] Form items initialized:', items.length);
 
       // Load previous failed check if exists (for other drivers to see)
       await this.loadPreviousFailedCheck(assetId);
 
       this.loading.set(false);
+      console.log('[PreShiftCheck] Data loading complete');
     } catch (error) {
+      console.error('[PreShiftCheck] Error loading data:', error);
       this.errorMessage.set(error instanceof Error ? error.message : 'Failed to load data');
       this.loading.set(false);
     }
@@ -287,20 +299,29 @@ export class PreShiftCheckComponent implements OnInit {
    * @param answer - The answer ('YES' or 'NO')
    */
   setAnswer(item: CheckFormItem, answer: 'YES' | 'NO'): void {
-    const items = this.formItems();
-    const idx = items.findIndex(i => i.item_id === item.item_id);
-    if (idx === -1) return;
+    console.log('[PreShiftCheck] setAnswer called:', item.item_id, answer);
+    try {
+      const items = this.formItems();
+      const idx = items.findIndex(i => i.item_id === item.item_id);
+      if (idx === -1) {
+        console.warn('[PreShiftCheck] Item not found:', item.item_id);
+        return;
+      }
 
-    const updated = [...items];
-    updated[idx] = {
-      ...updated[idx],
-      answer,
-      // Clear comment if YES, keep comment if NO
-      comment: answer === 'YES' ? '' : updated[idx].comment,
-      // Validate: YES is always valid, NO requires comment
-      isValid: answer === 'YES' || updated[idx].comment.trim().length > 0
-    };
-    this.formItems.set(updated);
+      const updated = [...items];
+      updated[idx] = {
+        ...updated[idx],
+        answer,
+        // Clear comment if YES, keep comment if NO
+        comment: answer === 'YES' ? '' : updated[idx].comment,
+        // Validate: YES is always valid, NO requires comment
+        isValid: answer === 'YES' || updated[idx].comment.trim().length > 0
+      };
+      this.formItems.set(updated);
+      console.log('[PreShiftCheck] Answer set successfully');
+    } catch (error) {
+      console.error('[PreShiftCheck] Error setting answer:', error);
+    }
   }
 
   /**
@@ -361,13 +382,20 @@ export class PreShiftCheckComponent implements OnInit {
    * Navigate back with confirmation if progress exists
    */
   goBack(): void {
-    const answered = this.answeredCount();
-    if (answered > 0) {
-      if (confirm('Are you sure you want to leave? Your progress will be lost.')) {
+    console.log('[PreShiftCheck] goBack called');
+    try {
+      const answered = this.answeredCount();
+      if (answered > 0) {
+        if (confirm('Are you sure you want to leave? Your progress will be lost.')) {
+          this.router.navigate(['/select-asset']);
+        }
+      } else {
         this.router.navigate(['/select-asset']);
       }
-    } else {
-      this.router.navigate(['/select-asset']);
+    } catch (error) {
+      console.error('[PreShiftCheck] Error in goBack:', error);
+      // Fallback navigation
+      window.history.back();
     }
   }
 

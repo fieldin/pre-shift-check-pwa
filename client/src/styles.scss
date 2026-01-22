@@ -168,6 +168,10 @@ select.form-control {
   transition: all 0.2s ease;
   text-decoration: none;
   white-space: nowrap;
+  // Mobile touch improvements
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
   
   &:active {
     transform: scale(0.98);

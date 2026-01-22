@@ -43,6 +43,9 @@
   border-radius: var(--border-radius);
   color: white;
   cursor: pointer;
+  // Ensure touch events work properly on mobile
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 
   &:active {
     background: rgba(255, 255, 255, 0.2);
@@ -406,13 +409,19 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  // Ensure touch events work properly on mobile
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 
-  &.yes:hover {
+  &.yes:hover,
+  &.yes:active {
     border-color: var(--color-success);
     background: var(--color-success-bg);
   }
 
-  &.no:hover {
+  &.no:hover,
+  &.no:active {
     border-color: var(--color-error);
     background: var(--color-error-bg);
   }
