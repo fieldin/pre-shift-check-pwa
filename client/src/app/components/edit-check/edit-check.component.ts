@@ -106,8 +106,12 @@ export class EditCheckComponent implements OnInit {
 
   /**
    * Initialize component and load event
+   * Waits for database initialization first (critical for offline mode)
    */
   async ngOnInit(): Promise<void> {
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
+
     const eventId = this.route.snapshot.paramMap.get('eventId');
     if (!eventId) {
       this.errorMessage.set('No event ID provided');

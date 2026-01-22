@@ -51,8 +51,12 @@ export class HistoryComponent implements OnInit {
 
   /**
    * Initialize component and load events
+   * Waits for database initialization first (critical for offline mode)
    */
   async ngOnInit(): Promise<void> {
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
+    
     const events = await this.db.getEvents();
     this.allEvents.set(events);
     this.applyFilter();

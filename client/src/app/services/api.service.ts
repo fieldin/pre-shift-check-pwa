@@ -97,6 +97,43 @@ export class ApiService {
     }
   }
 
+  /**
+   * Fast connectivity check with shorter timeout
+   * Used for periodic online/offline detection
+   * Uses native fetch with cache: 'no-store' to truly bypass ALL caches (browser + service worker)
+   * This is more reliable on mobile devices than Angular HttpClient
+   */
+  async healthCheck(): Promise<boolean> {
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+    try {
+      // Use native fetch with cache: 'no-store' to bypass ALL caching
+      // This is more reliable on mobile than Angular HttpClient
+      const cacheBuster = Date.now();
+      const response = await fetch(
+        `${this.baseUrl}/health?_cb=${cacheBuster}`,
+        {
+          method: 'GET',
+          cache: 'no-store', // Bypass browser cache completely
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      // Any error (network, timeout, abort) means we're offline
+      return false;
+    }
+  }
+
   // ==========================================
   // Generic HTTP methods
   // ==========================================

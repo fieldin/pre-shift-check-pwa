@@ -8,6 +8,9 @@ export type SyncState = 'idle' | 'syncing' | 'success' | 'error';
 /** Auto-sync interval in milliseconds (2 minutes) */
 const AUTO_SYNC_INTERVAL = 2 * 60 * 1000;
 
+/** Connectivity check interval in milliseconds (10 seconds for faster offline detection) */
+const CONNECTIVITY_CHECK_INTERVAL = 10 * 1000;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -18,7 +21,7 @@ export class SyncService {
   // Reactive signals for sync state
   private _syncState = signal<SyncState>('idle');
   private _syncMessage = signal<string>('');
-  private _isOnline = signal(navigator.onLine);
+  private _isOnline = signal(false); // Start as false, verify with actual ping
 
   readonly syncState = computed(() => this._syncState());
   readonly syncMessage = computed(() => this._syncMessage());
@@ -27,9 +30,11 @@ export class SyncService {
 
   private syncInProgress = false;
   private autoSyncIntervalId: ReturnType<typeof setInterval> | null = null;
+  private connectivityCheckIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.setupOnlineListeners();
+    this.setupConnectivityCheck();
     this.setupAutoSync();
   }
 
@@ -38,13 +43,11 @@ export class SyncService {
    * When coming back online, trigger a full sync
    */
   private setupOnlineListeners(): void {
+    // Standard online/offline events
     window.addEventListener('online', () => {
-      console.log('[Sync] Online event detected - triggering full sync');
-      this._isOnline.set(true);
-      // Full sync when coming back online (to get other drivers' data)
-      this.initialSync();
-      // Restart auto-sync interval
-      this.startAutoSync();
+      console.log('[Sync] Online event detected - verifying connectivity');
+      // Don't trust the event alone, verify with actual ping
+      this.checkConnectivity();
     });
 
     window.addEventListener('offline', () => {
@@ -53,15 +56,99 @@ export class SyncService {
       // Stop auto-sync when offline
       this.stopAutoSync();
     });
+
+    // Network Information API (better support on mobile)
+    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    if (connection) {
+      connection.addEventListener('change', () => {
+        console.log('[Sync] Network connection changed - checking connectivity');
+        this.checkConnectivity();
+      });
+    }
+  }
+
+  /**
+   * Setup periodic connectivity check to verify actual server reachability
+   * navigator.onLine is unreliable - it only checks network interface, not actual internet
+   */
+  private setupConnectivityCheck(): void {
+    // Check immediately on startup
+    this.checkConnectivity();
+
+    // Then check periodically
+    this.connectivityCheckIntervalId = setInterval(() => {
+      this.checkConnectivity();
+    }, CONNECTIVITY_CHECK_INTERVAL);
+  }
+
+  /**
+   * Check actual connectivity by pinging the server
+   * This is more reliable than navigator.onLine which is unreliable on mobile
+   * Note: We don't trust navigator.onLine on mobile - always verify with actual ping
+   * 
+   * Strategy: Default to offline, only go online after successful server ping
+   */
+  async checkConnectivity(): Promise<boolean> {
+    // Check 1: If browser explicitly says offline, we're definitely offline
+    if (!navigator.onLine) {
+      console.log('[Sync] Browser reports offline (navigator.onLine = false)');
+      this._isOnline.set(false);
+      return false;
+    }
+
+    // Check 2: Use Network Information API if available (better on mobile)
+    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    if (connection) {
+      // If connection type is 'none', we're offline
+      if (connection.type === 'none' || connection.effectiveType === 'none') {
+        console.log('[Sync] Network Information API reports no connection');
+        this._isOnline.set(false);
+        return false;
+      }
+      console.log(`[Sync] Network type: ${connection.type || connection.effectiveType || 'unknown'}`);
+    }
+
+    // Remember if we were online before (for triggering sync on reconnect)
+    const wasOnline = this._isOnline();
+
+    // Check 3: Actually ping the server (most reliable check)
+    try {
+      console.log('[Sync] Pinging server to verify connectivity...');
+      const isConnected = await this.api.healthCheck();
+      
+      console.log(`[Sync] Server ping result: ${isConnected ? 'SUCCESS' : 'FAILED'}`);
+      this._isOnline.set(isConnected);
+      
+      // If we just came online, trigger sync and restart auto-sync
+      if (isConnected && !wasOnline) {
+        console.log('[Sync] Connectivity restored - triggering full sync');
+        this.initialSync();
+        this.startAutoSync();
+      }
+      
+      return isConnected;
+    } catch (error) {
+      console.log('[Sync] Server ping failed:', error);
+      this._isOnline.set(false);
+      return false;
+    }
+  }
+
+  /**
+   * Force offline status (useful when we know we're offline)
+   */
+  forceOffline(): void {
+    console.log('[Sync] Forcing offline status');
+    this._isOnline.set(false);
+    this.stopAutoSync();
   }
 
   /**
    * Setup automatic sync every 2 minutes while online
    */
   private setupAutoSync(): void {
-    if (this._isOnline()) {
-      this.startAutoSync();
-    }
+    // Only start auto-sync after connectivity is confirmed
+    // The connectivity check will start it when online
   }
 
   /**

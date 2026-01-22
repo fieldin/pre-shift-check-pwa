@@ -6,7 +6,12 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    # Enable both HTTP and HTTPS
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    # Use wildcard certificate for *.dev.fieldintech.com
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:569061878514:certificate/9c94bf7e-a574-48ed-869b-ee0ba3bba51b
+    # Redirect HTTP to HTTPS
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
 spec:
   ingressClassName: alb
   rules:

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { DatabaseService } from '../../services/database.service';
@@ -47,14 +47,14 @@ export class DashboardComponent implements OnInit {
   private router = inject(Router);
 
   // ==========================================
-  // Reactive State
+  // Reactive State (from database service)
   // ==========================================
   
-  /** Number of cached assets */
-  assetsCount = signal(0);
+  /** Number of cached assets - reactive from database */
+  assetsCount = computed(() => this.db.assetsCount());
   
-  /** Number of cached checklists */
-  checklistsCount = signal(0);
+  /** Number of cached checklists - reactive from database */
+  checklistsCount = computed(() => this.db.checklistsCount());
 
   // ==========================================
   // Lifecycle Hooks
@@ -62,26 +62,13 @@ export class DashboardComponent implements OnInit {
 
   /**
    * Initialize component on mount
-   * Loads cached data stats and triggers initial sync
+   * Waits for database to be ready, then triggers initial sync
    */
-  ngOnInit(): void {
-    this.loadStats();
+  async ngOnInit(): Promise<void> {
+    // Wait for database to load saved data (reporter name, etc.)
+    await this.db.waitForInit();
+    // Then trigger sync (will be skipped if offline)
     this.syncService.initialSync();
-  }
-
-  // ==========================================
-  // Data Loading
-  // ==========================================
-
-  /**
-   * Load cached data statistics
-   * Retrieves counts of assets and checklists from local database
-   */
-  async loadStats(): Promise<void> {
-    const assets = await this.db.getAssets();
-    const checklists = await this.db.getAllActiveChecklists();
-    this.assetsCount.set(assets.length);
-    this.checklistsCount.set(checklists.length);
   }
 
   // ==========================================
@@ -91,9 +78,10 @@ export class DashboardComponent implements OnInit {
   /**
    * Trigger manual data sync
    * Syncs pending data and refreshes local cache
+   * Cache stats will automatically update via reactive signals
    */
   syncNow(): void {
-    this.syncService.manualSync().then(() => this.loadStats());
+    this.syncService.manualSync();
   }
 
   /**

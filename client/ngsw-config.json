@@ -1,17 +1,29 @@
 {
   "$schema": "./node_modules/@angular/service-worker/config/schema.json",
   "index": "/index.html",
+  "navigationUrls": [
+    "/**",
+    "!/**/*.*",
+    "!/**/api/**",
+    "!/api/**"
+  ],
   "assetGroups": [
     {
       "name": "app",
       "installMode": "prefetch",
+      "updateMode": "prefetch",
       "resources": {
         "files": [
           "/favicon.ico",
           "/index.html",
+          "/offline.html",
           "/manifest.webmanifest",
           "/*.css",
           "/*.js"
+        ],
+        "urls": [
+          "https://fonts.googleapis.com/**",
+          "https://fonts.gstatic.com/**"
         ]
       }
     },
@@ -32,6 +44,18 @@
     }
   ],
   "dataGroups": [
+    {
+      "name": "api-health-no-cache",
+      "urls": [
+        "/api/health*"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 0,
+        "maxAge": "0u",
+        "timeout": "5s"
+      }
+    },
     {
       "name": "api-assets",
       "urls": [

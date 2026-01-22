@@ -1,0 +1,19 @@
+deploy the poc site http://pre-shift-check.dev.fieldintech.com :
+cd /home/michael/fieldin/pre-shift-check-pwa && \
+echo "=== Logging into ECR ===" && \
+aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 569061878514.dkr.ecr.eu-west-1.amazonaws.com && \
+echo "" && \
+echo "=== Building client Docker image ===" && \
+docker build -t pre-shift-check-client:latest ./client && \
+echo "" && \
+echo "=== Tagging and pushing to ECR ===" && \
+docker tag pre-shift-check-client:latest 569061878514.dkr.ecr.eu-west-1.amazonaws.com/pre-shift-check-client:latest && \
+docker push 569061878514.dkr.ecr.eu-west-1.amazonaws.com/pre-shift-check-client:latest && \
+echo "" && \
+echo "=== Restarting deployment to pull new image ===" && \
+kubectl rollout restart deployment/pre-shift-check -n pre-shift-check && \
+echo "" && \
+echo "=== Waiting for rollout to complete ===" && \
+kubectl rollout status deployment/pre-shift-check -n pre-shift-check --timeout=120s && \
+echo "" && \
+echo "✅ Deployment updated successfully!"

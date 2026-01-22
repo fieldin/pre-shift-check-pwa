@@ -138,6 +138,7 @@ export class PreShiftCheckComponent implements OnInit {
 
   /**
    * Initialize component and load data
+   * Waits for database to be initialized first (important for offline mode)
    */
   async ngOnInit(): Promise<void> {
     const assetId = this.route.snapshot.paramMap.get('assetId');
@@ -147,6 +148,8 @@ export class PreShiftCheckComponent implements OnInit {
       return;
     }
 
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
     await this.loadData(assetId);
   }
 

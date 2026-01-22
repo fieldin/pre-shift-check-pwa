@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -51,11 +51,16 @@ export class SettingsComponent implements OnInit {
   reporterUserId = '';
 
   // ==========================================
-  // Cache Statistics
+  // Cache Statistics (reactive from database service)
   // ==========================================
   
-  /** Cached data counts */
-  cacheStats = signal({ assets: 0, checklists: 0, events: 0, faults: 0 });
+  /** Cached data counts - reactive computed from database signals */
+  cacheStats = computed(() => ({
+    assets: this.db.assetsCount(),
+    checklists: this.db.checklistsCount(),
+    events: this.db.eventsCount(),
+    faults: this.db.faultsCount()
+  }));
 
   // ==========================================
   // Lifecycle Hooks
@@ -63,10 +68,20 @@ export class SettingsComponent implements OnInit {
 
   /**
    * Initialize component and load current settings
+   * Waits for database initialization first (critical for offline mode)
    */
   async ngOnInit(): Promise<void> {
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
+
+    // First, try to use the already-loaded signal value (immediate)
+    this.loadReporterFromSignal();
+    
+    // Then try to load fresh from database (may fail offline, but signal value is already set)
     await this.loadCurrentReporter();
-    await this.loadCacheStats();
+    
+    // Refresh cache stats (will fail gracefully if offline)
+    await this.db.refreshCacheStats();
   }
 
   // ==========================================
@@ -74,33 +89,29 @@ export class SettingsComponent implements OnInit {
   // ==========================================
 
   /**
-   * Load current reporter identity from database
+   * Load reporter from signal (sync, always available)
    */
-  private async loadCurrentReporter(): Promise<void> {
-    const reporter = await this.db.getReporter();
-    if (reporter) {
-      this.reporterName = reporter.name;
-      this.reporterUserId = reporter.user_id || '';
+  private loadReporterFromSignal(): void {
+    const name = this.db.getReporterNameSync();
+    if (name) {
+      this.reporterName = name;
     }
   }
 
   /**
-   * Load cached data statistics
+   * Load current reporter identity from database
    */
-  async loadCacheStats(): Promise<void> {
-    const [assets, checklists, events, faults] = await Promise.all([
-      this.db.getAssets(),
-      this.db.getAllActiveChecklists(),
-      this.db.getEvents(),
-      this.db.getFaults()
-    ]);
-
-    this.cacheStats.set({
-      assets: assets.length,
-      checklists: checklists.length,
-      events: events.length,
-      faults: faults.length
-    });
+  private async loadCurrentReporter(): Promise<void> {
+    try {
+      const reporter = await this.db.getReporter();
+      if (reporter) {
+        this.reporterName = reporter.name;
+        this.reporterUserId = reporter.user_id || '';
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to load reporter:', error);
+      // Keep the signal value we already loaded
+    }
   }
 
   // ==========================================
@@ -123,9 +134,10 @@ export class SettingsComponent implements OnInit {
 
   /**
    * Trigger manual data sync
+   * Cache stats will automatically update via reactive signals
    */
   syncNow(): void {
-    this.syncService.manualSync().then(() => this.loadCacheStats());
+    this.syncService.manualSync();
   }
 
   /**
@@ -144,7 +156,7 @@ export class SettingsComponent implements OnInit {
       await this.db.clearAllData();
       this.reporterName = '';
       this.reporterUserId = '';
-      await this.loadCacheStats();
+      // Cache stats will automatically update via reactive signals
       this.router.navigate(['/']);
     }
   }

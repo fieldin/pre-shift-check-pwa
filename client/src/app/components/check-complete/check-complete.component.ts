@@ -61,8 +61,12 @@ export class CheckCompleteComponent implements OnInit {
 
   /**
    * Initialize component and load event data
+   * Waits for database initialization first (critical for offline mode)
    */
   async ngOnInit(): Promise<void> {
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
+
     const eventId = this.route.snapshot.paramMap.get('eventId');
     if (!eventId) return;
 

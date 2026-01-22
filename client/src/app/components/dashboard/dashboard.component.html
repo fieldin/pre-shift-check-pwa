@@ -38,112 +38,119 @@
   </header>
 
   <main class="main-content">
-    <!-- Reporter Warning - Shows if user hasn't set their name -->
-    @if (!db.hasReporter()) {
-      <div class="alert alert-warning">
-        <span class="alert-icon">⚠️</span>
-        <span class="alert-text">Please set your name before starting a check</span>
-        <a routerLink="/settings" class="btn btn-small btn-primary">Set Name</a>
+    <!-- Loading state while database initializes -->
+    @if (!db.isInitialized()) {
+      <div class="loading-state">
+        <span>Loading...</span>
       </div>
     } @else {
-      <!-- User Card - Shows current operator identity -->
-      <div class="user-card">
-        <div class="user-avatar">{{ utils.getInitials(db.reporterName()!) }}</div>
-        <div class="user-info">
-          <span class="user-name">{{ db.reporterName() }}</span>
-          <span class="user-label">Operator</span>
+      <!-- Reporter Warning - Shows if user hasn't set their name -->
+      @if (!db.hasReporter()) {
+        <div class="alert alert-warning">
+          <span class="alert-icon">⚠️</span>
+          <span class="alert-text">Please set your name before starting a check</span>
+          <a routerLink="/settings" class="btn btn-small btn-primary">Set Name</a>
         </div>
-        <a routerLink="/settings" class="btn btn-text btn-small">Change</a>
-      </div>
-    }
-
-    <!-- Main Action Button -->
-    <div class="main-action">
-      <button
-        class="btn btn-primary btn-large start-btn"
-        routerLink="/select-asset"
-        [disabled]="!db.hasReporter() || updateService.updateAvailable()"
-      >
-        <span class="start-icon">📋</span>
-        <span>Start Pre-Shift Check</span>
-      </button>
-      @if (updateService.updateAvailable()) {
-        <p class="action-hint">Update the app before starting a new check</p>
+      } @else {
+        <!-- User Card - Shows current operator identity -->
+        <div class="user-card">
+          <div class="user-avatar">{{ utils.getInitials(db.reporterName()!) }}</div>
+          <div class="user-info">
+            <span class="user-name">{{ db.reporterName() }}</span>
+            <span class="user-label">Operator</span>
+          </div>
+          <a routerLink="/settings" class="btn btn-text btn-small">Change</a>
+        </div>
       }
-    </div>
 
-    <!-- Pending Uploads Card - Shows if there are unsynced items -->
-    @if (db.totalPendingCount() > 0) {
-      <div class="section-card pending-card">
-        <div class="section-header">
-          <h2>Pending Uploads</h2>
-          <span class="badge badge-warning">{{ db.totalPendingCount() }}</span>
-        </div>
-        <p class="section-desc">
-          {{ db.pendingEventsCount() }} check(s) and {{ db.pendingFaultsCount() }} fault(s) waiting to sync
-        </p>
-        <div class="section-actions">
-          <a routerLink="/pending" class="btn btn-secondary">View Details</a>
-          <button
-            class="btn btn-outline"
-            (click)="syncNow()"
-            [disabled]="!syncService.isOnline() || syncService.isSyncing()"
-          >
-            {{ syncService.isSyncing() ? 'Syncing...' : 'Sync Now' }}
-          </button>
-        </div>
-      </div>
-    }
-
-    <!-- Sync Status Message -->
-    @if (syncService.syncMessage()) {
-      <div class="sync-status" [class.error]="syncService.syncState() === 'error'">
-        {{ syncService.syncMessage() }}
-      </div>
-    }
-
-    <!-- Quick Actions Grid -->
-    <div class="quick-actions">
-      <a routerLink="/history" class="quick-action-card">
-        <span class="qa-icon">📜</span>
-        <span class="qa-label">History</span>
-      </a>
-      <a routerLink="/pending" class="quick-action-card">
-        <span class="qa-icon">📤</span>
-        <span class="qa-label">Pending</span>
-        @if (db.totalPendingCount() > 0) {
-          <span class="qa-badge">{{ db.totalPendingCount() }}</span>
+      <!-- Main Action Button -->
+      <div class="main-action">
+        <button
+          class="btn btn-primary btn-large start-btn"
+          routerLink="/select-asset"
+          [disabled]="!db.hasReporter() || updateService.updateAvailable()"
+        >
+          <span class="start-icon">📋</span>
+          <span>Start Pre-Shift Check</span>
+        </button>
+        @if (updateService.updateAvailable()) {
+          <p class="action-hint">Update the app before starting a new check</p>
         }
-      </a>
-      <a routerLink="/settings" class="quick-action-card">
-        <span class="qa-icon">⚙️</span>
-        <span class="qa-label">Settings</span>
-      </a>
-    </div>
-
-    <!-- Cache Info Card - Shows cached assets and checklists count -->
-    <div class="cache-info">
-      <div class="cache-stats">
-        <div class="cache-stat">
-          <span class="cache-value">{{ assetsCount() }}</span>
-          <span class="cache-label">Assets</span>
-        </div>
-        <div class="cache-stat">
-          <span class="cache-value">{{ checklistsCount() }}</span>
-          <span class="cache-label">Checklists</span>
-        </div>
       </div>
-      @if (db.lastSyncAt()) {
-        <p class="last-sync">Last synced: {{ utils.formatRelativeTime(db.lastSyncAt()!) }}</p>
+
+      <!-- Pending Uploads Card - Shows if there are unsynced items -->
+      @if (db.totalPendingCount() > 0) {
+        <div class="section-card pending-card">
+          <div class="section-header">
+            <h2>Pending Uploads</h2>
+            <span class="badge badge-warning">{{ db.totalPendingCount() }}</span>
+          </div>
+          <p class="section-desc">
+            {{ db.pendingEventsCount() }} check(s) and {{ db.pendingFaultsCount() }} fault(s) waiting to sync
+          </p>
+          <div class="section-actions">
+            <a routerLink="/pending" class="btn btn-secondary">View Details</a>
+            <button
+              class="btn btn-outline"
+              (click)="syncNow()"
+              [disabled]="!syncService.isOnline() || syncService.isSyncing()"
+            >
+              {{ syncService.isSyncing() ? 'Syncing...' : 'Sync Now' }}
+            </button>
+          </div>
+        </div>
       }
-      <button
-        class="btn btn-text"
-        (click)="syncNow()"
-        [disabled]="!syncService.isOnline() || syncService.isSyncing()"
-      >
-        Refresh Data
-      </button>
-    </div>
+
+      <!-- Sync Status Message -->
+      @if (syncService.syncMessage()) {
+        <div class="sync-status" [class.error]="syncService.syncState() === 'error'">
+          {{ syncService.syncMessage() }}
+        </div>
+      }
+
+      <!-- Quick Actions Grid -->
+      <div class="quick-actions">
+        <a routerLink="/history" class="quick-action-card">
+          <span class="qa-icon">📜</span>
+          <span class="qa-label">History</span>
+        </a>
+        <a routerLink="/pending" class="quick-action-card">
+          <span class="qa-icon">📤</span>
+          <span class="qa-label">Pending</span>
+          @if (db.totalPendingCount() > 0) {
+            <span class="qa-badge">{{ db.totalPendingCount() }}</span>
+          }
+        </a>
+        <a routerLink="/settings" class="quick-action-card">
+          <span class="qa-icon">⚙️</span>
+          <span class="qa-label">Settings</span>
+        </a>
+      </div>
+
+      <!-- Cache Info Card - Shows cached assets and checklists count -->
+      <div class="cache-info">
+        <div class="cache-stats">
+          <div class="cache-stat">
+            <span class="cache-value">{{ assetsCount() }}</span>
+            <span class="cache-label">Assets</span>
+          </div>
+          <div class="cache-stat">
+            <span class="cache-value">{{ checklistsCount() }}</span>
+            <span class="cache-label">Checklists</span>
+          </div>
+        </div>
+        @if (db.lastSyncAt()) {
+          <p class="last-sync">Last synced: {{ utils.formatRelativeTime(db.lastSyncAt()!) }}</p>
+        }
+        <button
+          class="btn btn-text"
+          (click)="syncNow()"
+          [disabled]="!syncService.isOnline() || syncService.isSyncing()"
+        >
+          Refresh Data
+        </button>
+      </div>
+    }
   </main>
 </div>
 

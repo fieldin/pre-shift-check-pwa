@@ -54,8 +54,12 @@ export class PendingComponent implements OnInit {
 
   /**
    * Initialize component and load pending items
+   * Waits for database initialization first (critical for offline mode)
    */
   async ngOnInit(): Promise<void> {
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
+    
     await this.loadPending();
   }
 

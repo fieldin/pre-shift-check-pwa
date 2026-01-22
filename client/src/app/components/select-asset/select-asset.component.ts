@@ -62,8 +62,12 @@ export class SelectAssetComponent implements OnInit {
   /**
    * Initialize component
    * Handles QR deep links or loads asset list
+   * Waits for database initialization first (critical for offline mode)
    */
   async ngOnInit(): Promise<void> {
+    // Wait for database to be initialized (critical for offline mode)
+    await this.db.waitForInit();
+
     // Check for QR code deep link
     const assetId = this.route.snapshot.queryParamMap.get('asset_id');
     if (assetId) {

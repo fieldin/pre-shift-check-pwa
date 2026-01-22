@@ -49,6 +49,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "offline.html",
+                "input": "src",
+                "output": "/"
               }
             ],
             "styles": [

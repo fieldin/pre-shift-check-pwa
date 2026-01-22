@@ -45,6 +45,13 @@ export class DatabaseService {
   private _pendingFaultsCount = signal(0);
   private _lastSyncAt = signal<string | null>(null);
   private _reporterName = signal<string | null>(null);
+  private _isInitialized = signal(false);
+
+  // Cache statistics signals
+  private _assetsCount = signal(0);
+  private _checklistsCount = signal(0);
+  private _eventsCount = signal(0);
+  private _faultsCount = signal(0);
 
   // Computed values
   readonly pendingEventsCount = computed(() => this._pendingEventsCount());
@@ -53,14 +60,103 @@ export class DatabaseService {
   readonly lastSyncAt = computed(() => this._lastSyncAt());
   readonly reporterName = computed(() => this._reporterName());
   readonly hasReporter = computed(() => !!this._reporterName());
+  readonly isInitialized = computed(() => this._isInitialized());
+
+  // Cache statistics computed values
+  readonly assetsCount = computed(() => this._assetsCount());
+  readonly checklistsCount = computed(() => this._checklistsCount());
+  readonly eventsCount = computed(() => this._eventsCount());
+  readonly faultsCount = computed(() => this._faultsCount());
+
+  // Promise that resolves when initialization is complete
+  private initPromise: Promise<void>;
 
   constructor() {
-    this.initializeSignals();
+    this.initPromise = this.initializeSignals();
+  }
+
+  /**
+   * Wait for database initialization to complete
+   * Use this in components that need data immediately
+   */
+  async waitForInit(): Promise<void> {
+    return this.initPromise;
   }
 
   private async initializeSignals(): Promise<void> {
-    await this.refreshPendingCounts();
-    await this.loadAppMeta();
+    // Add a timeout to prevent hanging
+    const initWithTimeout = async (): Promise<void> => {
+      // Explicitly open the database first (important for offline mobile)
+      console.log('[Database] Opening database...');
+      await this.db.open();
+      console.log('[Database] Database opened successfully');
+
+      // Load app meta first (reporter name) to enable UI immediately
+      await this.loadAppMeta();
+      console.log('[Database] App meta loaded, reporter:', this._reporterName());
+
+      // Then load counts in parallel for efficiency
+      await Promise.all([
+        this.refreshPendingCounts(),
+        this.refreshCacheStats()
+      ]);
+
+      console.log('[Database] Initialization complete');
+    };
+
+    try {
+      // Timeout after 5 seconds to prevent hanging on mobile offline
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database initialization timeout')), 5000);
+      });
+
+      await Promise.race([initWithTimeout(), timeoutPromise]);
+      this._isInitialized.set(true);
+    } catch (error) {
+      console.error('[Database] Initialization failed:', error);
+      // Try a simpler initialization without counts
+      try {
+        console.log('[Database] Attempting fallback init...');
+        if (!this.db.isOpen()) {
+          await this.db.open();
+        }
+        await this.loadAppMeta();
+        console.log('[Database] Fallback init succeeded, reporter:', this._reporterName());
+      } catch (fallbackError) {
+        console.error('[Database] Fallback init also failed:', fallbackError);
+      }
+      this._isInitialized.set(true); // Still mark as initialized to prevent infinite waiting
+    }
+  }
+
+  /**
+   * Refresh cache statistics (assets, checklists, events, faults counts)
+   */
+  async refreshCacheStats(): Promise<void> {
+    try {
+      const [assetsCount, checklistsCount, eventsCount, faultsCount] = await Promise.all([
+        this.db.assets.count(),
+        this.db.activeChecklists.where('status').equals('ACTIVE').count(),
+        this.db.events.count(),
+        this.db.faults.count()
+      ]);
+
+      this._assetsCount.set(assetsCount);
+      this._checklistsCount.set(checklistsCount);
+      this._eventsCount.set(eventsCount);
+      this._faultsCount.set(faultsCount);
+    } catch (error) {
+      console.error('[Database] Failed to refresh cache stats:', error);
+      // Keep existing values if refresh fails
+    }
+  }
+
+  /**
+   * Get reporter name from signal (sync, no DB access needed)
+   * Use this for UI display when you just need the name without DB round-trip
+   */
+  getReporterNameSync(): string | null {
+    return this._reporterName();
   }
 
   // ==========================================
@@ -80,6 +176,7 @@ export class DatabaseService {
 
   async saveAssets(assets: Asset[]): Promise<void> {
     await this.db.assets.bulkPut(assets);
+    await this.refreshCacheStats();
   }
 
   async searchAssets(query: string): Promise<Asset[]> {
@@ -110,6 +207,7 @@ export class DatabaseService {
     // Only save active checklists
     const active = checklists.filter(c => c.status === 'ACTIVE');
     await this.db.activeChecklists.bulkPut(active);
+    await this.refreshCacheStats();
   }
 
   // ==========================================
@@ -166,6 +264,7 @@ export class DatabaseService {
   async saveEvent(event: PreShiftCheckEvent): Promise<void> {
     await this.db.events.put(event);
     await this.refreshPendingCounts();
+    await this.refreshCacheStats();
   }
 
   async updateEventSyncStatus(eventId: string, status: 'PENDING' | 'SYNCED' | 'ERROR', error?: string): Promise<void> {
@@ -212,11 +311,13 @@ export class DatabaseService {
   async saveFault(fault: Fault): Promise<void> {
     await this.db.faults.put(fault);
     await this.refreshPendingCounts();
+    await this.refreshCacheStats();
   }
 
   async saveFaults(faults: Fault[]): Promise<void> {
     await this.db.faults.bulkPut(faults);
     await this.refreshPendingCounts();
+    await this.refreshCacheStats();
   }
 
   async updateFaultSyncStatus(faultId: string, status: 'PENDING' | 'SYNCED' | 'ERROR', error?: string): Promise<void> {
@@ -294,8 +395,13 @@ export class DatabaseService {
   // App Meta
   // ==========================================
   async getMeta(key: string): Promise<string | number | boolean | null> {
-    const meta = await this.db.appMeta.get(key);
-    return meta?.value ?? null;
+    try {
+      const meta = await this.db.appMeta.get(key);
+      return meta?.value ?? null;
+    } catch (error) {
+      console.error(`[Database] Failed to get meta key "${key}":`, error);
+      return null;
+    }
   }
 
   async setMeta(key: string, value: string | number | boolean | null): Promise<void> {
@@ -310,10 +416,17 @@ export class DatabaseService {
   }
 
   async getReporter(): Promise<{ name: string; user_id?: string } | null> {
-    const name = await this.getMeta('reporterName') as string | null;
-    if (!name) return null;
-    const userId = await this.getMeta('reporterUserId') as string | null;
-    return { name, user_id: userId || undefined };
+    try {
+      const name = await this.getMeta('reporterName') as string | null;
+      if (!name) return null;
+      const userId = await this.getMeta('reporterUserId') as string | null;
+      return { name, user_id: userId || undefined };
+    } catch (error) {
+      console.error('[Database] Failed to get reporter:', error);
+      // Fallback to signal value if database read fails
+      const signalName = this._reporterName();
+      return signalName ? { name: signalName } : null;
+    }
   }
 
   async setReporter(name: string, userId?: string): Promise<void> {
@@ -329,20 +442,30 @@ export class DatabaseService {
   }
 
   private async loadAppMeta(): Promise<void> {
-    const lastSync = await this.getMeta('lastSyncAt') as string | null;
-    const reporter = await this.getMeta('reporterName') as string | null;
-    this._lastSyncAt.set(lastSync);
-    this._reporterName.set(reporter);
+    try {
+      const lastSync = await this.getMeta('lastSyncAt') as string | null;
+      const reporter = await this.getMeta('reporterName') as string | null;
+      this._lastSyncAt.set(lastSync);
+      this._reporterName.set(reporter);
+    } catch (error) {
+      console.error('[Database] Failed to load app meta:', error);
+      // Keep existing values if load fails
+    }
   }
 
   // ==========================================
   // Utilities
   // ==========================================
   async refreshPendingCounts(): Promise<void> {
-    const pendingEvents = await this.db.events.where('sync_status').anyOf(['PENDING', 'ERROR']).count();
-    const pendingFaults = await this.db.faults.where('sync_status').anyOf(['PENDING', 'ERROR']).count();
-    this._pendingEventsCount.set(pendingEvents);
-    this._pendingFaultsCount.set(pendingFaults);
+    try {
+      const pendingEvents = await this.db.events.where('sync_status').anyOf(['PENDING', 'ERROR']).count();
+      const pendingFaults = await this.db.faults.where('sync_status').anyOf(['PENDING', 'ERROR']).count();
+      this._pendingEventsCount.set(pendingEvents);
+      this._pendingFaultsCount.set(pendingFaults);
+    } catch (error) {
+      console.error('[Database] Failed to refresh pending counts:', error);
+      // Keep existing values
+    }
   }
 
   async clearAllData(): Promise<void> {
@@ -351,12 +474,18 @@ export class DatabaseService {
       this.db.activeChecklists.clear(),
       this.db.events.clear(),
       this.db.faults.clear(),
-      this.db.appMeta.clear()
+      this.db.appMeta.clear(),
+      this.db.lastFailedChecks.clear()
     ]);
     this._pendingEventsCount.set(0);
     this._pendingFaultsCount.set(0);
     this._lastSyncAt.set(null);
     this._reporterName.set(null);
+    // Reset cache stats
+    this._assetsCount.set(0);
+    this._checklistsCount.set(0);
+    this._eventsCount.set(0);
+    this._faultsCount.set(0);
   }
 
   // Check if we have minimum required data to start a check
