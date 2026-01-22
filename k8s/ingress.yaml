@@ -10,20 +10,38 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-  - host: pre-shift-check.dev.fieldintech.com
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: pre-shift-check
-            port:
-              number: 3000
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: pre-shift-check
-            port:
-              number: 80
+    # Rule for custom domain
+    - host: pre-shift-check.dev.fieldintech.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: pre-shift-check
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pre-shift-check
+                port:
+                  number: 80
+    # Default rule (allows direct ALB access without host header)
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: pre-shift-check
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pre-shift-check
+                port:
+                  number: 80
