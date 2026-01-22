@@ -1,0 +1,73 @@
+<!--
+  History Component Template
+  
+  Displays completed pre-shift check events with filtering.
+  Shows pass/fail status and allows viewing event details.
+-->
+
+<div class="history-page">
+  <!-- Header -->
+  <header class="header">
+    <button class="back-btn" routerLink="/">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <h1>Check History</h1>
+  </header>
+
+  <!-- Filter Buttons -->
+  <div class="filter-bar">
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'all'"
+      (click)="setFilter('all')"
+    >All</button>
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'pass'"
+      (click)="setFilter('pass')"
+    >✓ Pass</button>
+    <button
+      class="filter-btn"
+      [class.active]="filter() === 'fail'"
+      (click)="setFilter('fail')"
+    >✗ Fail</button>
+  </div>
+
+  <!-- Events List -->
+  <main class="main-content">
+    <!-- Empty State -->
+    @if (filteredEvents().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">📋</span>
+        <p class="empty-title">No checks recorded</p>
+        <p class="empty-subtitle">Complete your first pre-shift check</p>
+      </div>
+    } @else {
+      <!-- Event Cards -->
+      <div class="events-list">
+        @for (event of filteredEvents(); track event.event_id) {
+          <a class="event-card" [routerLink]="['/check-complete', event.event_id]">
+            <div class="event-left">
+              <div class="event-result" [ngClass]="utils.getResultClass(event.result)">
+                {{ event.result === 'PASS' ? '✓' : '✗' }}
+              </div>
+            </div>
+            <div class="event-center">
+              <span class="event-asset">{{ event.asset_id }}</span>
+              <span class="event-meta">{{ event.machine_class }} · {{ event.reporter.name }}</span>
+            </div>
+            <div class="event-right">
+              <span class="badge" [ngClass]="utils.getSyncStatusBadgeClass(event.sync_status)">
+                {{ event.sync_status }}
+              </span>
+              <span class="event-date">{{ utils.formatSmartDate(event.completed_at) }}</span>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </main>
+</div>
+

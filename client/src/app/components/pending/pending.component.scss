@@ -1,0 +1,263 @@
+/**
+ * Pending Component Styles
+ * 
+ * Styling for pending uploads screen showing unsynced events and faults.
+ */
+
+// ==========================================
+// Container
+// ==========================================
+
+.pending-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+// ==========================================
+// Header
+// ==========================================
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-primary);
+  color: white;
+
+  h1 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin: 0;
+    flex: 1;
+    color: white;
+  }
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: var(--border-radius);
+  color: white;
+  cursor: pointer;
+}
+
+// ==========================================
+// Sync Bar
+// ==========================================
+
+.sync-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-error);
+
+  &.online {
+    background: var(--color-success);
+  }
+}
+
+// ==========================================
+// Main Content
+// ==========================================
+
+.main-content {
+  padding: 16px;
+}
+
+// ==========================================
+// Section
+// ==========================================
+
+.section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0 0 8px 4px;
+}
+
+// ==========================================
+// Empty Card
+// ==========================================
+
+.empty-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--color-success);
+}
+
+.empty-icon {
+  font-size: 1.25rem;
+}
+
+.empty-text {
+  font-size: 0.875rem;
+}
+
+// ==========================================
+// Items List
+// ==========================================
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 14px;
+}
+
+.item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+// ==========================================
+// Result Indicator
+// ==========================================
+
+.item-result {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
+
+  &.pass {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  &.fail {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+  }
+}
+
+// ==========================================
+// Priority Indicator
+// ==========================================
+
+.item-priority {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+
+  &.high {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+  }
+
+  &.med {
+    background: var(--color-warning-bg);
+    color: var(--color-warning-text);
+  }
+
+  &.low {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+  }
+}
+
+// ==========================================
+// Item Info
+// ==========================================
+
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-title {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.item-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ==========================================
+// Error Message
+// ==========================================
+
+.item-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--color-error-bg);
+  border-radius: var(--border-radius);
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+
+// ==========================================
+// Actions
+// ==========================================
+
+.item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+

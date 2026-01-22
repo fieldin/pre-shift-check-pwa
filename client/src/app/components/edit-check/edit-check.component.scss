@@ -1,0 +1,339 @@
+/**
+ * Edit Check Component Styles
+ * 
+ * Styling for edit check screen. Similar to pre-shift-check but with
+ * orange header to indicate editing mode.
+ */
+
+// ==========================================
+// Container
+// ==========================================
+
+.edit-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+// ==========================================
+// Header (Orange for edit mode)
+// ==========================================
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--color-warning-text); // Orange header for edit mode
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: var(--border-radius);
+  color: white;
+  cursor: pointer;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.header-info {
+  flex: 1;
+
+  h1 {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin: 0;
+    color: white;
+  }
+}
+
+.header-subtitle {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+// ==========================================
+// State Screens
+// ==========================================
+
+.loading-state,
+.error-state,
+.locked-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  gap: 16px;
+  text-align: center;
+}
+
+.spinner-icon {
+  font-size: 2rem;
+  animation: spin 1s linear infinite;
+}
+
+.error-icon,
+.locked-icon {
+  font-size: 3rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ==========================================
+// Main Content
+// ==========================================
+
+.main-content {
+  flex: 1;
+  padding: 16px;
+  padding-bottom: 200px; // Space for fixed footer
+}
+
+// ==========================================
+// Progress Section
+// ==========================================
+
+.progress-section {
+  margin-bottom: 16px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progress-title {
+  font-weight: 500;
+  font-size: 0.9375rem;
+}
+
+.progress-version {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--border-radius);
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+// ==========================================
+// Checklist Items
+// ==========================================
+
+.checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checklist-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  transition: border-color 0.2s;
+
+  &.answered {
+    border-color: var(--color-success);
+  }
+
+  &.invalid {
+    border-color: var(--color-error);
+  }
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.item-number {
+  width: 24px;
+  height: 24px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.item-text {
+  margin: 0 0 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+// ==========================================
+// Answer Buttons
+// ==========================================
+
+.item-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.answer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--bg-secondary);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &.yes:hover {
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+  }
+
+  &.no:hover {
+    border-color: var(--color-error);
+    background: var(--color-error-bg);
+  }
+
+  &.yes.selected {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: white;
+  }
+
+  &.no.selected {
+    background: var(--color-error);
+    border-color: var(--color-error);
+    color: white;
+  }
+}
+
+// ==========================================
+// Comment Section
+// ==========================================
+
+.comment-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.required {
+  color: var(--color-error);
+}
+
+.error-text {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin-top: 4px;
+}
+
+// ==========================================
+// Footer
+// ==========================================
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.result-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--border-radius);
+  margin-bottom: 12px;
+  font-size: 0.875rem;
+
+  &.pass {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  &.fail {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+  }
+}
+
+.result-icon {
+  font-size: 1.125rem;
+}
+
+.result-label {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.result-value {
+  font-weight: 600;
+}
+
+.fail-count {
+  margin-left: auto;
+  opacity: 0.8;
+}
+
+.submit-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 8px 0 0;
+}
+

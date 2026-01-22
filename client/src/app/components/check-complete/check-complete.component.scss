@@ -1,0 +1,197 @@
+/**
+ * Check Complete Component Styles
+ * 
+ * Styling for check completion screen with result summary.
+ */
+
+// ==========================================
+// Container
+// ==========================================
+
+.complete-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+// ==========================================
+// Result Header
+// ==========================================
+
+.result-header {
+  text-align: center;
+  padding: 32px 16px;
+  color: white;
+
+  &.pass {
+    background: var(--color-success);
+  }
+
+  &.fail {
+    background: var(--color-error);
+  }
+}
+
+.result-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.result-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0 0 4px;
+  color: white;
+}
+
+.result-status {
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+// ==========================================
+// Main Content
+// ==========================================
+
+.main-content {
+  padding: 16px;
+}
+
+// ==========================================
+// Card
+// ==========================================
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+// ==========================================
+// Summary Grid
+// ==========================================
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+}
+
+.summary-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+// ==========================================
+// Sync Row
+// ==========================================
+
+.sync-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.sync-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+// ==========================================
+// Issues Card
+// ==========================================
+
+.issues-card {
+  border-left: 3px solid var(--color-error);
+}
+
+.issues-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.issue-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--color-error-bg);
+  border-radius: var(--border-radius);
+  margin-bottom: 8px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.issue-text {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.issue-comment {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+// ==========================================
+// Actions
+// ==========================================
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+// ==========================================
+// Loading State
+// ==========================================
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: var(--text-muted);
+}
+
+// ==========================================
+// Utility Classes
+// ==========================================
+
+.text-error {
+  color: var(--color-error);
+}
+

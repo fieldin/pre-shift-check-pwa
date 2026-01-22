@@ -1,0 +1,356 @@
+/**
+ * Dashboard Component Styles
+ * 
+ * Main landing page styling following FieldIn design system.
+ * Mobile-first responsive design with clean, modern aesthetics.
+ */
+
+// ==========================================
+// Container
+// ==========================================
+
+.dashboard {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+// ==========================================
+// Update Banner
+// ==========================================
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--color-warning-bg);
+  border-bottom: 1px solid var(--color-warning);
+
+  .update-icon {
+    font-size: 1.25rem;
+  }
+
+  .update-text {
+    flex: 1;
+    font-weight: 500;
+    color: var(--color-warning-text);
+  }
+}
+
+// ==========================================
+// Header
+// ==========================================
+
+.header {
+  background: var(--color-primary);
+  color: white;
+  padding: 20px 16px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.header-left {
+  h1 {
+    font-size: 1.375rem;
+    font-weight: 500;
+    margin: 0;
+    color: white;
+  }
+}
+
+.header-subtitle {
+  font-size: 0.8125rem;
+  opacity: 0.8;
+}
+
+// Status indicator (Online/Offline)
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-indicator.online .status-dot {
+  background: #4caf50;
+}
+
+.status-indicator.offline .status-dot {
+  background: #f44336;
+}
+
+// ==========================================
+// Main Content
+// ==========================================
+
+.main-content {
+  padding: 16px;
+}
+
+// ==========================================
+// Alert Banner
+// ==========================================
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  margin-bottom: 16px;
+}
+
+.alert-warning {
+  background: var(--color-warning-bg);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.alert-icon {
+  font-size: 1.25rem;
+}
+
+.alert-text {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--color-warning-text);
+}
+
+// ==========================================
+// User Card
+// ==========================================
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin-bottom: 16px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.user-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+// ==========================================
+// Main Action Button
+// ==========================================
+
+.main-action {
+  margin: 24px 0;
+  text-align: center;
+}
+
+.start-btn {
+  padding: 16px 32px;
+  font-size: 1rem;
+  gap: 10px;
+}
+
+.start-icon {
+  font-size: 1.25rem;
+}
+
+.action-hint {
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+// ==========================================
+// Section Card
+// ==========================================
+
+.section-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.pending-card {
+  border-left: 3px solid var(--color-accent);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  h2 {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    margin: 0;
+  }
+}
+
+.section-desc {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+}
+
+// ==========================================
+// Sync Status
+// ==========================================
+
+.sync-status {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-accent);
+  margin-bottom: 16px;
+
+  &.error {
+    color: var(--color-error);
+  }
+}
+
+// ==========================================
+// Quick Actions Grid
+// ==========================================
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.quick-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+
+  &:hover {
+    border-color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.qa-icon {
+  font-size: 1.5rem;
+}
+
+.qa-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.qa-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--color-error);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+// ==========================================
+// Cache Info
+// ==========================================
+
+.cache-info {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  text-align: center;
+}
+
+.cache-stats {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 8px;
+}
+
+.cache-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cache-value {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+.cache-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.last-sync {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 8px 0 4px;
+}
+

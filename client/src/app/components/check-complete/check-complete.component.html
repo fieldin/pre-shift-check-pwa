@@ -1,0 +1,77 @@
+<!--
+  Check Complete Component Template
+  
+  Displays completion status and summary after a pre-shift check.
+  Shows result (PASS/FAIL), issues found, and navigation options.
+-->
+
+<div class="complete-page">
+  @if (event()) {
+    <!-- Result Header with color indicator -->
+    <div class="result-header" [ngClass]="utils.getResultClass(event()!.result)">
+      <div class="result-icon">{{ event()!.result === 'PASS' ? '✓' : '✗' }}</div>
+      <h1 class="result-title">Check Complete</h1>
+      <p class="result-status">Result: <strong>{{ event()!.result }}</strong></p>
+    </div>
+
+    <main class="main-content">
+      <!-- Summary Card -->
+      <div class="card summary-card">
+        <h2 class="card-title">Summary</h2>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="summary-label">Asset</span>
+            <span class="summary-value">{{ event()!.asset_id }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Machine Class</span>
+            <span class="summary-value">{{ event()!.machine_class }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Completed</span>
+            <span class="summary-value">{{ utils.formatTime(event()!.completed_at) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Reporter</span>
+            <span class="summary-value">{{ event()!.reporter.name }}</span>
+          </div>
+        </div>
+        
+        <!-- Sync Status Row -->
+        <div class="sync-row">
+          <span class="sync-label">Sync Status</span>
+          <span class="badge" [ngClass]="utils.getSyncStatusBadgeClass(event()!.sync_status)">
+            {{ event()!.sync_status }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Issues Card - Only shown for failed checks -->
+      @if (event()!.result === 'FAIL') {
+        <div class="card issues-card">
+          <h2 class="card-title text-error">Issues Found ({{ failedItems().length }})</h2>
+          <ul class="issues-list">
+            @for (item of failedItems(); track item.item_id) {
+              <li class="issue-item">
+                <span class="issue-text">{{ item.text }}</span>
+                @if (item.comment) {
+                  <span class="issue-comment">"{{ item.comment }}"</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <!-- Navigation Actions -->
+      <div class="actions">
+        <a routerLink="/" class="btn btn-primary btn-large">Back to Dashboard</a>
+        <a routerLink="/select-asset" class="btn btn-secondary btn-large">Start Another Check</a>
+      </div>
+    </main>
+  } @else {
+    <!-- Loading State -->
+    <div class="loading">Loading...</div>
+  }
+</div>
+

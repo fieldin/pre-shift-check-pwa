@@ -1,0 +1,164 @@
+<!--
+  Edit Check Component Template
+  
+  Allows editing of pending (unsynced) pre-shift check events.
+  Locked events (already synced) cannot be edited.
+-->
+
+<div class="edit-page">
+  <!-- Header with edit indicator -->
+  <header class="header">
+    <button class="back-btn" (click)="goBack()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div class="header-info">
+      <h1>Edit Check</h1>
+      @if (event()) {
+        <span class="header-subtitle">{{ event()!.asset_id }}</span>
+      }
+    </div>
+    <span class="badge badge-warning">Draft</span>
+  </header>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-icon">⏳</div>
+      <span>Loading...</span>
+    </div>
+  } 
+  
+  <!-- Error State -->
+  @else if (errorMessage()) {
+    <div class="error-state">
+      <div class="error-icon">❌</div>
+      <p>{{ errorMessage() }}</p>
+      <button class="btn btn-primary" routerLink="/pending">Back to Pending</button>
+    </div>
+  } 
+  
+  <!-- Locked State (already synced) -->
+  @else if (isLocked()) {
+    <div class="locked-state">
+      <div class="locked-icon">🔒</div>
+      <p>This check has been synced and can no longer be edited.</p>
+      <button class="btn btn-primary" routerLink="/pending">Back to Pending</button>
+    </div>
+  } 
+  
+  <!-- Main Edit Content -->
+  @else {
+    <main class="main-content">
+      <!-- Progress Indicator -->
+      <div class="progress-section">
+        <div class="progress-header">
+          <span class="progress-title">{{ event()!.machine_class }} Checklist</span>
+          <span class="progress-version">v{{ event()!.checklist_snapshot.version }}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="completionProgress()"></div>
+        </div>
+        <span class="progress-text">{{ answeredCount() }} of {{ formItems().length }} completed</span>
+      </div>
+
+      <!-- Checklist Items -->
+      <div class="checklist-items">
+        @for (item of formItems(); track item.item_id; let i = $index) {
+          <div class="checklist-item" [class.answered]="item.answer !== null" [class.invalid]="!item.isValid">
+            <!-- Item Header -->
+            <div class="item-header">
+              <span class="item-number">{{ i + 1 }}</span>
+              <span class="item-priority badge" [ngClass]="utils.getPriorityBadgeClass(item.priority)">
+                {{ item.priority }}
+              </span>
+            </div>
+            
+            <!-- Item Question -->
+            <p class="item-text">{{ item.text }}</p>
+
+            <!-- Answer Buttons -->
+            <div class="item-buttons">
+              <button
+                class="answer-btn yes"
+                [class.selected]="item.answer === 'YES'"
+                (click)="setAnswer(item, 'YES')"
+                type="button"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                Yes
+              </button>
+              <button
+                class="answer-btn no"
+                [class.selected]="item.answer === 'NO'"
+                (click)="setAnswer(item, 'NO')"
+                type="button"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+                No
+              </button>
+            </div>
+
+            <!-- Comment Section for NO answers -->
+            @if (item.answer === 'NO') {
+              <div class="comment-section">
+                <label class="form-label">
+                  Comment <span class="required">*</span>
+                </label>
+                <textarea
+                  [(ngModel)]="item.comment"
+                  (input)="validateItem(item)"
+                  placeholder="Describe the issue..."
+                  class="form-control"
+                  rows="2"
+                ></textarea>
+                @if (item.answer === 'NO' && !item.comment.trim()) {
+                  <span class="error-text">Comment is required for issues</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </main>
+
+    <!-- Footer with result preview and save button -->
+    <footer class="footer">
+      <!-- Result Preview -->
+      <div class="result-preview" [class.pass]="willPass()" [class.fail]="!willPass()">
+        <span class="result-icon">{{ willPass() ? '✓' : '✗' }}</span>
+        <span class="result-label">Result:</span>
+        <span class="result-value">{{ willPass() ? 'PASS' : 'FAIL' }}</span>
+        @if (!willPass()) {
+          <span class="fail-count">({{ failCount() }} issue{{ failCount() > 1 ? 's' : '' }})</span>
+        }
+      </div>
+
+      <!-- Save Button -->
+      <button
+        class="btn btn-primary btn-large"
+        (click)="saveChanges()"
+        [disabled]="!canSubmit()"
+      >
+        Save Changes
+      </button>
+
+      <!-- Validation Hints -->
+      @if (!canSubmit()) {
+        <p class="submit-hint">
+          @if (answeredCount() < formItems().length) {
+            Complete all {{ formItems().length }} items to continue
+          } @else {
+            Add comments for all issues
+          }
+        </p>
+      }
+    </footer>
+  }
+</div>
+

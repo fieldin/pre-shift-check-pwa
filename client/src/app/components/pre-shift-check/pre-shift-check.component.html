@@ -1,0 +1,198 @@
+<!--
+  Pre-Shift Check Component Template
+  
+  Main checklist execution screen where operators complete safety checks.
+  Shows asset info, open faults, checklist items, and handles submission.
+-->
+
+<div class="check-page">
+  <!-- Header with back navigation -->
+  <header class="header">
+    <button class="back-btn" (click)="goBack()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div class="header-info">
+      <h1>Pre-Shift Check</h1>
+      @if (asset()) {
+        <span class="header-subtitle">{{ asset()!.name }}</span>
+      }
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner-icon">⏳</div>
+      <span>Loading checklist...</span>
+    </div>
+  } 
+  
+  <!-- Error State -->
+  @else if (errorMessage()) {
+    <div class="error-state">
+      <div class="error-icon">❌</div>
+      <p>{{ errorMessage() }}</p>
+      <button class="btn btn-primary" routerLink="/">Go to Dashboard</button>
+    </div>
+  } 
+  
+  <!-- Main Content -->
+  @else {
+    <main class="main-content">
+      <!-- Asset Information Card -->
+      <div class="asset-card">
+        <div class="asset-icon">{{ utils.getAssetIcon(asset()!.machine_class) }}</div>
+        <div class="asset-details">
+          <span class="asset-name">{{ asset()!.name }}</span>
+          <span class="asset-meta">{{ asset()!.asset_id }} · {{ asset()!.machine_class }}</span>
+        </div>
+      </div>
+
+      <!-- Previous Failed Check Warning - Shows last FAIL result if not fixed -->
+      @if (previousFailedCheck()) {
+        <div class="previous-fail-alert">
+          <div class="previous-fail-header">
+            <span class="previous-fail-icon">🚨</span>
+            <div class="previous-fail-title-section">
+              <span class="previous-fail-title">Previous Check FAILED</span>
+              <span class="previous-fail-meta">
+                By {{ previousFailedCheck()!.reporter_name }} · {{ utils.formatRelativeTime(previousFailedCheck()!.completed_at) }}
+              </span>
+            </div>
+          </div>
+          <div class="previous-fail-body">
+            <p class="previous-fail-notice">
+              ⚠️ The following issues were reported and have not been resolved:
+            </p>
+            <div class="previous-fail-items">
+              @for (item of previousFailedCheck()!.failed_items; track item.item_id) {
+                <div class="previous-fail-item">
+                  <span class="badge" [ngClass]="utils.getPriorityBadgeClass(item.priority)">
+                    {{ item.priority }}
+                  </span>
+                  <div class="previous-fail-item-content">
+                    <span class="previous-fail-item-text">{{ item.text }}</span>
+                    @if (item.comment) {
+                      <span class="previous-fail-item-comment">"{{ item.comment }}"</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Progress Indicator -->
+      <div class="progress-section">
+        <div class="progress-header">
+          <span class="progress-title">{{ checklist()!.machine_class }} Checklist</span>
+          <span class="progress-version">v{{ checklist()!.version }}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="completionProgress()"></div>
+        </div>
+        <span class="progress-text">{{ answeredCount() }} of {{ formItems().length }} completed</span>
+      </div>
+
+      <!-- Checklist Items -->
+      <div class="checklist-items">
+        @for (item of formItems(); track item.item_id; let i = $index) {
+          <div class="checklist-item" [class.answered]="item.answer !== null" [class.invalid]="!item.isValid">
+            <!-- Item Header with number and priority -->
+            <div class="item-header">
+              <span class="item-number">{{ i + 1 }}</span>
+              <span class="item-priority badge" [ngClass]="utils.getPriorityBadgeClass(item.priority)">
+                {{ item.priority }}
+              </span>
+            </div>
+            
+            <!-- Item Question Text -->
+            <p class="item-text">{{ item.text }}</p>
+
+            <!-- Yes/No Answer Buttons -->
+            <div class="item-buttons">
+              <button
+                class="answer-btn yes"
+                [class.selected]="item.answer === 'YES'"
+                (click)="setAnswer(item, 'YES')"
+                type="button"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                Yes
+              </button>
+              <button
+                class="answer-btn no"
+                [class.selected]="item.answer === 'NO'"
+                (click)="setAnswer(item, 'NO')"
+                type="button"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+                No
+              </button>
+            </div>
+
+            <!-- Comment Section - Only visible for NO answers -->
+            @if (item.answer === 'NO') {
+              <div class="comment-section">
+                <label class="form-label">
+                  Comment <span class="required">*</span>
+                </label>
+                <textarea
+                  [(ngModel)]="item.comment"
+                  (input)="validateItem(item)"
+                  placeholder="Describe the issue..."
+                  class="form-control"
+                  rows="2"
+                ></textarea>
+                @if (item.answer === 'NO' && !item.comment.trim()) {
+                  <span class="error-text">Comment is required for issues</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </main>
+
+    <!-- Footer with result preview and submit button -->
+    <footer class="footer">
+      <!-- Result Preview -->
+      <div class="result-preview" [class.pass]="willPass()" [class.fail]="!willPass()">
+        <span class="result-icon">{{ willPass() ? '✓' : '✗' }}</span>
+        <span class="result-label">Result:</span>
+        <span class="result-value">{{ willPass() ? 'PASS' : 'FAIL' }}</span>
+        @if (!willPass()) {
+          <span class="fail-count">({{ failCount() }} issue{{ failCount() > 1 ? 's' : '' }})</span>
+        }
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        class="btn btn-primary btn-large"
+        (click)="submitCheck()"
+        [disabled]="!canSubmit()"
+      >
+        Complete Check
+      </button>
+
+      <!-- Validation Hints -->
+      @if (!canSubmit()) {
+        <p class="submit-hint">
+          @if (answeredCount() < formItems().length) {
+            Complete all {{ formItems().length }} items to continue
+          } @else {
+            Add comments for all issues
+          }
+        </p>
+      }
+    </footer>
+  }
+</div>
+

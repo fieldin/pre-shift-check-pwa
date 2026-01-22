@@ -1,0 +1,42 @@
+---
+# Server Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: pre-shift-check-server
+  namespace: pre-shift-check
+  labels:
+    app: pre-shift-check
+    component: server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: pre-shift-check
+    component: server
+
+---
+# Client Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: pre-shift-check-client
+  namespace: pre-shift-check
+  labels:
+    app: pre-shift-check
+    component: client
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  selector:
+    app: pre-shift-check
+    component: client
+

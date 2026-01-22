@@ -1,0 +1,461 @@
+openapi: 3.0.3
+info:
+  title: Pre-Shift Check API
+  description: API for managing pre-shift safety checklists for agricultural equipment
+  version: 1.0.0
+  contact:
+    name: FieldIn Engineering
+
+servers:
+  - url: /api
+    description: API server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags: [System]
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /assets:
+    get:
+      summary: List all assets
+      operationId: listAssets
+      tags: [Assets]
+      responses:
+        '200':
+          description: List of assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Asset'
+
+  /assets/{asset_id}:
+    get:
+      summary: Get asset by ID
+      operationId: getAsset
+      tags: [Assets]
+      parameters:
+        - name: asset_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Asset found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '404':
+          description: Asset not found
+
+  /checklists:
+    get:
+      summary: List all checklists
+      operationId: listChecklists
+      tags: [Checklists]
+      responses:
+        '200':
+          description: List of checklists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Checklist'
+
+  /checklists/active:
+    get:
+      summary: Get active checklist for machine class
+      operationId: getActiveChecklist
+      tags: [Checklists]
+      parameters:
+        - name: machine_class
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Machine class (e.g., Tractor, Harvester, Sprayer)
+      responses:
+        '200':
+          description: Active checklist found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Missing machine_class parameter
+        '404':
+          description: No active checklist found
+
+  /events:
+    get:
+      summary: List pre-shift check events
+      operationId: listEvents
+      tags: [Events]
+      parameters:
+        - name: asset_id
+          in: query
+          schema:
+            type: string
+          description: Filter by asset ID
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreShiftCheckEvent'
+    post:
+      summary: Create or update pre-shift check event (idempotent)
+      operationId: upsertEvent
+      tags: [Events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreShiftCheckEvent'
+      responses:
+        '200':
+          description: Event updated
+        '201':
+          description: Event created
+
+  /events/batch:
+    post:
+      summary: Batch create/update events
+      operationId: batchUpsertEvents
+      tags: [Events]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PreShiftCheckEvent'
+      responses:
+        '200':
+          description: Batch processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /faults:
+    get:
+      summary: List faults
+      operationId: listFaults
+      tags: [Faults]
+      parameters:
+        - name: asset_id
+          in: query
+          schema:
+            type: string
+          description: Filter by asset ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, CLOSED]
+          description: Filter by fault status
+      responses:
+        '200':
+          description: List of faults
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fault'
+    post:
+      summary: Create or update fault (idempotent)
+      operationId: upsertFault
+      tags: [Faults]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fault'
+      responses:
+        '200':
+          description: Fault updated
+        '201':
+          description: Fault created
+
+  /faults/batch:
+    post:
+      summary: Batch create/update faults
+      operationId: batchUpsertFaults
+      tags: [Faults]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [faults]
+              properties:
+                faults:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Fault'
+      responses:
+        '200':
+          description: Batch processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /faults/{fault_id}:
+    patch:
+      summary: Update fault (e.g., close fault)
+      operationId: updateFault
+      tags: [Faults]
+      parameters:
+        - name: fault_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [OPEN, CLOSED]
+      responses:
+        '200':
+          description: Fault updated
+        '404':
+          description: Fault not found
+
+  /status:
+    get:
+      summary: Get server status and counts
+      operationId: getStatus
+      tags: [System]
+      responses:
+        '200':
+          description: Server status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assets:
+                    type: integer
+                  checklists:
+                    type: integer
+                  activeChecklists:
+                    type: integer
+                  events:
+                    type: integer
+                  faults:
+                    type: integer
+                  openFaults:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  schemas:
+    Asset:
+      type: object
+      required: [asset_id, name, machine_class, qr_code_value]
+      properties:
+        asset_id:
+          type: string
+          example: TRAC001
+        name:
+          type: string
+          example: John Deere 8R 410
+        machine_class:
+          type: string
+          example: Tractor
+        qr_code_value:
+          type: string
+          example: TRAC001
+
+    ChecklistItem:
+      type: object
+      required: [item_id, text, priority, sort_order]
+      properties:
+        item_id:
+          type: string
+        text:
+          type: string
+        priority:
+          type: string
+          enum: [LOW, MED, HIGH]
+        sort_order:
+          type: integer
+
+    Checklist:
+      type: object
+      required: [checklist_id, machine_class, status, version, items]
+      properties:
+        checklist_id:
+          type: string
+        machine_class:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        version:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+
+    CheckResponse:
+      type: object
+      required: [item_id, answer]
+      properties:
+        item_id:
+          type: string
+        answer:
+          type: string
+          enum: [YES, NO]
+        comment:
+          type: string
+          description: Required when answer is NO
+
+    Reporter:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        user_id:
+          type: string
+
+    PreShiftCheckEvent:
+      type: object
+      required: [event_id, asset_id, machine_class, checklist_snapshot, responses, reporter, started_at, completed_at, result]
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        asset_id:
+          type: string
+        machine_class:
+          type: string
+        checklist_snapshot:
+          type: object
+          properties:
+            checklist_id:
+              type: string
+            version:
+              type: string
+            machine_class:
+              type: string
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChecklistItem'
+        responses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckResponse'
+        reporter:
+          $ref: '#/components/schemas/Reporter'
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        result:
+          type: string
+          enum: [PASS, FAIL]
+
+    Fault:
+      type: object
+      required: [fault_id, asset_id, status, origin, priority, description, reporter]
+      properties:
+        fault_id:
+          type: string
+          format: uuid
+        asset_id:
+          type: string
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        origin:
+          type: string
+          enum: [PRE_SHIFT_CHECK, MANUAL, SYSTEM]
+        priority:
+          type: string
+          enum: [LOW, MED, HIGH]
+        description:
+          type: string
+        source_event_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        reporter:
+          $ref: '#/components/schemas/Reporter'
+
+    BatchResponse:
+      type: object
+      properties:
+        processed:
+          type: integer
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              error:
+                type: string
+
