@@ -238,27 +238,39 @@ export class PreShiftCheckComponent implements OnInit {
    * This helps other drivers see issues reported by previous drivers
    * 
    * Strategy:
-   * 1. Check server cache (fetched during "Refresh Data" sync)
-   * 2. Fall back to local events from this device
+   * 1. If we've synced before, ONLY use server cache (source of truth)
+   *    - If server says no failure (null), trust it - don't fall back to local
+   *    - This ensures Driver A sees cleared failures after Driver B passes
+   * 2. If never synced, fall back to local events (offline-first support)
    * 
    * @param assetId - Asset ID to check
    */
   private async loadPreviousFailedCheck(assetId: string): Promise<void> {
-    // First try the cached data from server (populated during sync/refresh)
-    let lastFailedEvent = await this.db.getCachedLastFailedCheck(assetId);
+    // Check if we've ever synced with the server
+    const hasEverSynced = this.db.lastSyncAt() !== null;
 
-    // Fall back to local events from this device
-    if (!lastFailedEvent) {
-      lastFailedEvent = await this.db.getLastUnresolvedFailedCheck(assetId);
+    if (hasEverSynced) {
+      // Trust the server cache - it knows about ALL drivers' submissions
+      // If server returned null (no failure), that's the truth - don't fall back to local
+      const lastFailedEvent = await this.db.getCachedLastFailedCheck(assetId);
+
+      if (!lastFailedEvent) {
+        this.previousFailedCheck.set(null);
+        return;
+      }
+
+      this.setPreviousFailedCheckFromEvent(lastFailedEvent);
+    } else {
+      // Never synced - fall back to local events (offline-first support)
+      const lastFailedEvent = await this.db.getLastUnresolvedFailedCheck(assetId);
+
+      if (!lastFailedEvent) {
+        this.previousFailedCheck.set(null);
+        return;
+      }
+
+      this.setPreviousFailedCheckFromEvent(lastFailedEvent);
     }
-
-    if (!lastFailedEvent) {
-      this.previousFailedCheck.set(null);
-      return;
-    }
-
-    // Convert event to display format
-    this.setPreviousFailedCheckFromEvent(lastFailedEvent);
   }
 
   /**

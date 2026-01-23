@@ -44,11 +44,23 @@ export class ApiService {
 
   /**
    * Get the last unresolved failed check for an asset from the server
-   * Returns null if no failed check exists or if the last check was PASS
+   * 
+   * Per-driver logic:
+   * - If reporterName is provided, returns failure only if THAT reporter's last check was FAIL
+   * - If reporter's last check was PASS, returns null (they've cleared their issues)
+   * - If reporter has no checks, falls back to global "last failed" logic
+   * 
+   * @param assetId - Asset ID to check
+   * @param reporterName - Optional reporter name to filter by (for per-driver failure tracking)
+   * @returns The last failed event or null
    */
-  async getLastFailedCheck(assetId: string): Promise<PreShiftCheckEvent | null> {
+  async getLastFailedCheck(assetId: string, reporterName?: string): Promise<PreShiftCheckEvent | null> {
     try {
-      return await this.get<PreShiftCheckEvent | null>(`/events/last-failed/${encodeURIComponent(assetId)}`);
+      let url = `/events/last-failed/${encodeURIComponent(assetId)}`;
+      if (reporterName) {
+        url += `?reporter_name=${encodeURIComponent(reporterName)}`;
+      }
+      return await this.get<PreShiftCheckEvent | null>(url);
     } catch {
       return null;
     }
@@ -124,7 +136,7 @@ export class ApiService {
           }
         }
       );
-      
+
       clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {

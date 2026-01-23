@@ -115,17 +115,17 @@ export class SyncService {
     try {
       console.log('[Sync] Pinging server to verify connectivity...');
       const isConnected = await this.api.healthCheck();
-      
+
       console.log(`[Sync] Server ping result: ${isConnected ? 'SUCCESS' : 'FAILED'}`);
       this._isOnline.set(isConnected);
-      
+
       // If we just came online, trigger sync and restart auto-sync
       if (isConnected && !wasOnline) {
         console.log('[Sync] Connectivity restored - triggering full sync');
         this.initialSync();
         this.startAutoSync();
       }
-      
+
       return isConnected;
     } catch (error) {
       console.log('[Sync] Server ping failed:', error);
@@ -201,14 +201,18 @@ export class SyncService {
       await this.db.saveAssets(assets);
       await this.db.saveChecklists(checklists);
 
-      // Fetch and cache last failed checks for all assets
+      // IMPORTANT: Upload pending items FIRST before fetching last-failed-checks
+      // This ensures we get the correct state after our events are uploaded
+      // Example: Driver A has a pending FAIL from 10:00, Driver B passed at 10:30
+      // We need to upload Driver A's event first, then fetch the correct last-failed state
+      await this.syncQueue();
+
+      // NOW fetch and cache last failed checks (after pending items are uploaded)
+      // This ensures the cache reflects the true server state including our just-uploaded events
       await this.fetchLastFailedChecksForAllAssets(assets);
 
       // Update last sync time
       await this.db.setMeta('lastSyncAt', new Date().toISOString());
-
-      // Now sync pending items
-      await this.syncQueue();
 
       this._syncState.set('success');
       this._syncMessage.set('Sync completed');
@@ -227,7 +231,7 @@ export class SyncService {
    */
   private async fetchLastFailedChecksForAllAssets(assets: Asset[]): Promise<void> {
     this._syncMessage.set('Fetching failure reports...');
-    
+
     // Clear old cache first
     await this.db.clearLastFailedChecksCache();
 
@@ -292,13 +296,16 @@ export class SyncService {
         await this.syncFaults(pendingFaults);
       }
 
-      // 3. Refresh open faults for recently touched assets
+      // 3. Refresh data for recently touched assets
       const touchedAssetIds = new Set<string>();
       pendingEvents.forEach(e => touchedAssetIds.add(e.asset_id));
       pendingFaults.forEach(f => touchedAssetIds.add(f.asset_id));
 
       for (const assetId of touchedAssetIds) {
         await this.refreshFaultsForAsset(assetId);
+        // Also refresh last-failed-check cache for this asset
+        // This ensures the failure state is correct after uploading events
+        await this.refreshLastFailedCheckForAsset(assetId);
       }
 
       // Update last sync time
@@ -400,6 +407,20 @@ export class SyncService {
       console.log(`[Sync] Refreshed ${serverFaults.length} faults for asset ${assetId}`);
     } catch (error) {
       console.error(`[Sync] Failed to refresh faults for asset ${assetId}:`, error);
+    }
+  }
+
+  /**
+   * Refresh the last-failed-check cache for a single asset
+   * Called after uploading events to ensure cache reflects true server state
+   */
+  async refreshLastFailedCheckForAsset(assetId: string): Promise<void> {
+    try {
+      const lastFailed = await this.api.getLastFailedCheck(assetId);
+      await this.db.saveLastFailedCheck(assetId, lastFailed);
+      console.log(`[Sync] Refreshed last-failed-check for asset ${assetId}: ${lastFailed ? 'FAIL' : 'none'}`);
+    } catch (error) {
+      console.error(`[Sync] Failed to refresh last-failed-check for asset ${assetId}:`, error);
     }
   }
 
